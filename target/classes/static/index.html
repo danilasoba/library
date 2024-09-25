@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Management</title>
+    <script>
+        async function fetchBooks() {
+            const response = await fetch('/api/v1/books');
+            const books = await response.json();
+            displayBooks(books);
+        }
+
+        async function addBook(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const book = {
+                title: formData.get('title'),
+                author: formData.get('author'),
+                year: parseInt(formData.get('year')),
+                ratings: [] // Start with an empty ratings array
+            };
+
+            await fetch('/api/v1/books/save_book', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(book)
+            });
+            fetchBooks(); // Refresh the book list
+        }
+
+        async function addRating(title) {
+            const ratingInput = document.getElementById(`rating-${title}`);
+            const newRating = parseFloat(ratingInput.value);
+
+            if (newRating < 1 || newRating > 5) {
+                alert("Rating must be between 1 and 5.");
+                return;
+            }
+
+            await fetch(`/api/v1/books/${title}/add_rating`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newRating)
+            });
+            fetchBooks(); // Refresh the book list
+        }
+
+        async function deleteBook(title) {
+            if (confirm(`Are you sure you want to delete the book "${title}"?`)) {
+                await fetch(`/api/v1/books/delete_book/${title}`, {
+                    method: 'DELETE',
+                });
+                fetchBooks(); // Refresh the book list
+            }
+        }
+
+        async function filterBooks() {
+            const selection = document.getElementById('filterSelection').value;
+            const response = await fetch(`/api/v1/books/filter/${selection}`);
+            const books = await response.json();
+            displayBooks(books);
+        }
+
+        function displayBooks(books) {
+            const bookList = document.getElementById('bookList');
+            bookList.innerHTML = ''; // Clear existing list
+            books.forEach(book => {
+                const li = document.createElement('li');
+                li.textContent = `${book.title} by ${book.author} (${book.year}) - Average Rating: ${book.averageRating}`;
+
+                const ratingInput = document.createElement('input');
+                ratingInput.type = 'number';
+                ratingInput.min = 1;
+                ratingInput.max = 5;
+                ratingInput.id = `rating-${book.title}`;
+
+                const rateButton = document.createElement('button');
+                rateButton.textContent = 'Rate';
+                rateButton.onclick = () => addRating(book.title);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.onclick = () => deleteBook(book.title);
+
+                li.appendChild(ratingInput);
+                li.appendChild(rateButton);
+                li.appendChild(deleteButton);
+                bookList.appendChild(li);
+            });
+        }
+
+        window.onload = fetchBooks; // Load books on page load
+    </script>
+</head>
+<body>
+<h1>Book Management</h1>
+
+<h2>Add New Book</h2>
+<form id="addBookForm" onsubmit="addBook(event)">
+    <label for="title">Title:</label>
+    <input type="text" name="title" required>
+    <label for="author">Author:</label>
+    <input type="text" name="author" required>
+    <label for="year">Year:</label>
+    <input type="number" name="year" required>
+    <button type="submit">Add Book</button>
+</form>
+
+<h2>Filter Books</h2>
+<label for="filterSelection">Select Filter:</label>
+<select id="filterSelection" onchange="filterBooks()">
+    <option value="title">Title</option>
+    <option value="year">Year</option>
+    <option value="author">Author</option>
+    <option value="rating">Rating</option>
+</select>
+
+<h2>Book List</h2>
+<ul id="bookList"></ul>
+</body>
+</html>

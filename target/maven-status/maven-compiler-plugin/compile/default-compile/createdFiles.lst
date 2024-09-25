@@ -1,0 +1,7 @@
+sob\lib\library\LibraryApplication.class
+sob\lib\library\repository\InMemoryBookDAO.class
+sob\lib\library\controller\BooksController.class
+sob\lib\library\service\Impl\InMemoryBookService.class
+sob\lib\library\service\BooksService.class
+sob\lib\library\model\Book$BookBuilder.class
+sob\lib\library\model\Book.class
